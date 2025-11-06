@@ -27,7 +27,7 @@ repositories {
 dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient 클래스 제공
+    implementation 'org.springframework:spring-webflux' // WebClient 클래스만 사용하기 위해
     implementation 'io.projectreactor.netty:reactor-netty-http'            // WebClient용 기본 HTTP 클라이언트
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

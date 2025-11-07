@@ -117,7 +117,7 @@ public class AptTradeOpenApiClient {
                 .block();
 
         // 원문 XML 로그(원할 때만)
-        log.debug("RAW XML = {}", raw);
+        //log.debug("RAW XML = {}", raw);
 
         try {
             return xmlMapper.readValue(raw, ApiResponse.class);     // ← Jackson XmlMapper로 파싱

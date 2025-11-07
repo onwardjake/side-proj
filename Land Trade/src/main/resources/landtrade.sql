@@ -53,10 +53,10 @@ CREATE TABLE apt_trade (
 
     -- 아파트 정보 (단지/면적/층/건축년도)
     apt_nm            VARCHAR(200)   NOT NULL COMMENT '아파트명',           -- 서울역센트럴자이
-    apt_seq           BIGINT             NULL COMMENT '단지 일련번호',       -- 11140-1300
+    apt_seq           VARCHAR(12)        NULL COMMENT '단지 일련번호',       -- 11140-1300
     apt_dong          VARCHAR(50)        NULL COMMENT '아파트 동명',
     floor             SMALLINT           NULL COMMENT '층',               -- 4
-    exclu_use_ar      DECIMAL(10,2)  NOT NULL COMMENT '전용면적(m2)',       -- 89.8989
+    exclu_use_ar      DECIMAL(10,4)  NOT NULL COMMENT '전용면적(m2)',       -- 89.8989
     build_year        SMALLINT           NULL COMMENT '건축년도(YYYY)',     -- 2017
 
     -- 계약 정보
@@ -77,7 +77,23 @@ CREATE TABLE apt_trade (
 
     -- 관리
     created_at        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY(id),
+
+    -- 중복 방지용 자연키
+    -- 동일 단지/면적/층/계약일(연-월-일) 기준으로 유니크 처리
+    UNIQUE KEY uq_trade_main(
+        sgg_cd, apt_nm, exclu_use_ar, build_year, floor, deal_year, deal_month, deal_day
+    ),
+
+    -- 조회 성능용 인덱스
+    KEY idx_lawd (sgg_cd),
+    KEY idx_deal_ym (deal_year, deal_month),
+    KEY idx_build_year (build_year),
+    KEY idx_apt (apt_nm),
+    KEY idx_umd_cd (umd_cd),
+    KEY idx_umd_nm (umd_nm)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 

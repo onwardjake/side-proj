@@ -1,6 +1,7 @@
 package com.jake.landtrade.controller;
 
 import com.jake.landtrade.dto.TradeItem;
+import com.jake.landtrade.service.LawdCdService;
 import com.jake.landtrade.service.AptTradeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +16,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AptTradeController {
     private final AptTradeService aptTradeService;
+    private final LawdCdService lawdCdService;
 
     @GetMapping("/test")
     public String test() {
-        return "test";
+        lawdCdService.getAllLawdCds();
+        return "success";
     }
 
     // http://localhost:8080/api/trades?lawdCd=41135&dealYmd=202510&page=1&size=10

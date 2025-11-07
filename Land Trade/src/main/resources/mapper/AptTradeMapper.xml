@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jake.landtrade.mapper.AptTradeMapper">
+
+    <!--
+      테이블: apt_trade
+      UNIQUE KEY uq_trade_main (
+        sgg_cd, apt_nm, exclu_use_ar, build_year, floor, deal_year, deal_month, deal_day
+      )
+      에 맞춰 UPSERT 수행
+    -->
+    <insert id="bulkUpsert">
+        INSERT INTO apt_trade (
+        sgg_cd, umd_cd, umd_nm, jibun, land_cd, bonbun, bubun,
+        road_nm, road_nm_sgg_cd, road_nm_cd, road_nm_seq, road_nmb_cd, road_nm_bonbun, road_nm_bubun,
+        apt_nm, apt_seq, apt_dong, floor, exclu_use_ar, build_year,
+        deal_year, deal_month, deal_day, deal_amount,
+        rgst_date, dealing_gbn, estate_agent_sgg_nm, sler_gbn, buyer_gbn, land_leasehold_gbn,
+        cdeal_type, cdeal_day
+        ) VALUES
+        <foreach collection="list" item="t" separator=",">
+            (
+            #{t.sggCd}, #{t.umdCd}, #{t.umdNm}, #{t.jibun}, #{t.landCd}, #{t.bonbun}, #{t.bubun},
+            #{t.roadNm}, #{t.roadNmSggCd}, #{t.roadNmCd}, #{t.roadNmSeq}, #{t.roadNmbCd}, #{t.roadNmBonbun}, #{t.roadNmBubun},
+            #{t.aptNm}, #{t.aptSeq}, #{t.aptDong}, #{t.floor}, #{t.excluUseAr}, #{t.buildYear},
+            #{t.dealYear}, #{t.dealMonth}, #{t.dealDay}, #{t.dealAmount},
+            #{t.rgstDate}, #{t.dealingGbn}, #{t.estateAgentSggNm}, #{t.slerGbn}, #{t.buyerGbn}, #{t.landLeaseholdGbn},
+            #{t.cdealType}, #{t.cdealDay}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        -- 값 업데이트(변동 가능성이 있는 필드 위주)
+        deal_amount            = VALUES(deal_amount),
+        rgst_date              = VALUES(rgst_date),
+        cdeal_type             = VALUES(cdeal_type),
+        cdeal_day              = VALUES(cdeal_day),
+        dealing_gbn            = VALUES(dealing_gbn),
+        estate_agent_sgg_nm    = VALUES(estate_agent_sgg_nm),
+        sler_gbn               = VALUES(sler_gbn),
+        buyer_gbn              = VALUES(buyer_gbn),
+        land_leasehold_gbn     = VALUES(land_leasehold_gbn),
+        -- 보조 텍스트/주소 정보도 최신화
+        umd_cd                 = VALUES(umd_cd),
+        umd_nm                 = VALUES(umd_nm),
+        jibun                  = VALUES(jibun),
+        land_cd                = VALUES(land_cd),
+        bonbun                 = VALUES(bonbun),
+        bubun                  = VALUES(bubun),
+        road_nm                = VALUES(road_nm),
+        road_nm_sgg_cd         = VALUES(road_nm_sgg_cd),
+        road_nm_cd             = VALUES(road_nm_cd),
+        road_nm_seq            = VALUES(road_nm_seq),
+        road_nmb_cd            = VALUES(road_nmb_cd),
+        road_nm_bonbun         = VALUES(road_nm_bonbun),
+        road_nm_bubun          = VALUES(road_nm_bubun),
+        apt_dong               = VALUES(apt_dong),
+        -- 관리 컬럼은 트리거: updated_at 자동 업데이트 (테이블 생성 시 default로 현재 TIMESTAMP를 넣도록 설정함)
+        updated_at             = CURRENT_TIMESTAMP
+    </insert>
+
+</mapper>

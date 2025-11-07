@@ -23,27 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
-public class LawdCdOpenApiClient {
-    private final WebClient webClient;
-    private final OpenApiProps props;
-    private final XmlMapper xmlMapper = new XmlMapper();
-
+public class LawdCdOpenApiClient extends OpenApiClient {
     public LawdCdOpenApiClient(OpenApiProps props){
-        this.props = props;
-
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, props.connectTimeoutMills())
-                .doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(props.responseTimeoutMills(), TimeUnit.MILLISECONDS)))
-                .responseTimeout(Duration.ofMillis(props.responseTimeoutMills()));
-
-        // MVC 환경에서도 WebClient를 순수 클라이언트로 사용
-        this.webClient = WebClient.builder()
-                .baseUrl(props.baseUrl())
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .defaultHeaders(h -> h.setAccept(List.of(MediaType.APPLICATION_XML)))
-                .filter(logRequest())
-                .filter(logResponse())
-                .build();
+        super(props);
     }
 
     //public List<LawdItem> fetchAll() throws IOException {

@@ -16,11 +16,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AptTradeController {
     private final AptTradeService aptTradeService;
-    private final LawdCdService lawdCdService;
+    //private final LawdCdService lawdCdService;
 
     @GetMapping("/test")
     public String test() {
-        lawdCdService.getAllLawdCds();
+        //lawdCdService.getAllLawdCds();
         return "success";
     }
 

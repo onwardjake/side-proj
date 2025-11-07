@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-//@SpringBootApplication
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@SpringBootApplication
+//@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 @ConfigurationPropertiesScan
 public class LandTradeApplication {
 

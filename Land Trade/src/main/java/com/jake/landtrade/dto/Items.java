@@ -8,5 +8,5 @@ import java.util.List;
 public record Items(
         @JacksonXmlElementWrapper(useWrapping = false)
         @JacksonXmlProperty(localName = "item")
-        List<TradeItem> item
+        List<OpenApiTradeItem> item
 ) {}

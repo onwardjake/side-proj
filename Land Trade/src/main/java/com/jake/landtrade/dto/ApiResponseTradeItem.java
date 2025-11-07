@@ -3,7 +3,7 @@ package com.jake.landtrade.dto;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JacksonXmlRootElement(localName = "response")
-public record ApiResponse(
+public record ApiResponseTradeItem(
         Header header,
         Body body
 ) {}

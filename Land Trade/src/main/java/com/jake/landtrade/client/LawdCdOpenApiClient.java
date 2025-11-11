@@ -1,66 +1,106 @@
 package com.jake.landtrade.client;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.jake.landtrade.config.OpenApiProps;
-import io.netty.channel.ChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
+import com.jake.landtrade.config.OpenApiPropsApt;
+import com.jake.landtrade.config.OpenApiPropsLawd;
+import com.jake.landtrade.dto.ApiResponse;
+import com.jake.landtrade.dto.Body;
+import com.jake.landtrade.dto.OpenApiTradeItem;
+import com.jake.landtrade.dto.lawd.ApiResponseLawd;
+import com.jake.landtrade.dto.lawd.LawdItem;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
+import reactor.core.publisher.Mono;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 
 @Slf4j
 @Component
-public class LawdCdOpenApiClient extends OpenApiClient {
-    public LawdCdOpenApiClient(OpenApiProps props){
+public class LawdCdOpenApiClient extends OpenApiClient<OpenApiPropsLawd> {
+    public LawdCdOpenApiClient(OpenApiPropsLawd props){
         super(props);
     }
 
-    //public List<LawdItem> fetchAll() throws IOException {
-    public void fetchAll() {
-        /*
+    public ApiResponseLawd fetchPage(Integer pageNo, Integer pageSize) {
+        String raw = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(props.servicePath())
+                        .queryParam("serviceKey", urlEncode(props.serviceKey()))
+                        .queryParam("pageNo", Optional.ofNullable(pageNo).orElse(1))
+                        .queryParam("numOfRows", Optional.ofNullable(pageSize).orElse(props.defaultPageSize()))
+                        .build(true))
+                .accept(MediaType.APPLICATION_XML)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
+                .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
+                .bodyToMono(String.class)
+                .onErrorResume(ex -> Mono.error(new RuntimeException("OpenAPI 호출 실패: " + ex.getMessage(), ex)))
+                .block();
+
+        // 원문 XML 로그(원할 때만)
+        log.debug("RAW XML = {}", raw);
+
         try {
-            String finalKey = "2b5e4fdb83723904417206dd7c71aac959683fdc1fc50981d15ac54e46b3d933";
-            StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1741000/StanReginCd/getStanReginCdList"); // URL
-            urlBuilder.append("?" + URLEncoder.encode("serviceKey", "UTF-8") + "=" + finalKey); // Service Key
-            urlBuilder.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); // 페이지번호
-            urlBuilder.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("20", "UTF-8")); // 한 페이지 결과 수
-            urlBuilder.append("&" + URLEncoder.encode("type", "UTF-8") + "=" + URLEncoder.encode("xml", "UTF-8")); // 호출문서(xml, json) default : xml
-            //urlBuilder.append("&" + URLEncoder.encode("locatadd_nm","UTF-8") + "=" + URLEncoder.encode("서울특별시", "UTF-8")); // 지역주소명
-            URL url = new URL(urlBuilder.toString());
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Content-type", "application/json");
-            System.out.println("Response code: " + conn.getResponseCode());
-            BufferedReader rd;
-            if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-                rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            } else {
-                rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-            }
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = rd.readLine()) != null) {
-                sb.append(line);
-            }
-            rd.close();
-            conn.disconnect();
-            System.out.println(sb.toString());
-        } catch (IOException e) {
-            e.getMessage();
+            return xmlMapper.readValue(raw, ApiResponseLawd.class);     // ← Jackson XmlMapper로 파싱
+        } catch (Exception e) {
+            throw new RuntimeException("XML 파싱 실패: " + e.getMessage(), e);
         }
-        //*/
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // method : fetchAll
+    // description : 페이지 개수 만큼 fetchPage를 호출하여 전체 데이터를 받는다.
+    // parameter : lawdCd - 법정동코드 5자리(ex. 11110), dealYmd - 거래년월(ex. 202510)
+    // return type : 받아온 실거래가 데이터를 TradeItem 리스트로 만들어 리턴한다
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public List<ApiResponseLawd.Items> fetchAll() {
+        int page = 1;
+        int rows = props.defaultPageSize();
+
+        ApiResponseLawd first = fetchPage(page, rows);
+        ApiResponseLawd.Body body = ensureSuccess(first);
+
+        int total = Optional.ofNullable(body.totalCount()).orElse(0);
+        List<ApiResponseLawd.Item> all = new ArrayList<>();
+        if(body.items() != null && body.items().item() != null) {
+            all.addAll(body.items().item());
+        }
+
+        int pageCount = (int) Math.ceil(total/(double)rows);
+        for(page = 2; page <= pageCount; page++) {
+            ApiResponse resp = fetchPage(page, rows);
+            Body b = ensureSuccess(resp);
+            if(b.items() != null && b.items().item() != null) {
+                all.addAll(b.items().item());
+            }
+        }
+
+        return all;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // method : ensureSuccess
+    // description : API 호출에 대한 응답에 문제가 없는지 확인하고, 문제가 없다면 repose의 body를 리턴한다.
+    // parameter : API 호출에 대한 결과가 들어있는 response 객체
+    // return type : response 객체의 body를 리턴한다.
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public static Body ensureSuccess(ApiResponseLawd response) {
+        if(response == null || response.header() == null) {
+            throw new IllegalStateException("응답 파싱 실패 : 응답 내용이 없거나 header 없음");
+        }
+
+        String resultCode = response.header().resultCode();
+        if(!"00".equals(resultCode)) {
+            throw new IllegalStateException("OpenAPI 오류: resultCode=" + resultCode + ", msg=" + response.header().resultMsg());
+        }
+        if(response.body() == null) {
+            throw new IllegalStateException("응답 파싱 실패: body 없음");
+        }
+
+        return response.body();
     }
 }

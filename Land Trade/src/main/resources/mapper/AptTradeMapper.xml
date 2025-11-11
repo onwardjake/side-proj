@@ -9,6 +9,8 @@
         sgg_cd, apt_nm, exclu_use_ar, build_year, floor, deal_year, deal_month, deal_day
       )
       에 맞춰 UPSERT 수행
+       -> 새 데이터가 처음 들어오는 경우 INSERT
+       -> 동일 키(중복)인 경우 ON DUPLICATE KEY UPDATE에 명시한 항목들은 새로운 데이터로 업데이트
     -->
     <insert id="bulkUpsert">
         INSERT INTO apt_trade (

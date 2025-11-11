@@ -2,10 +2,12 @@ package com.jake.landtrade.client;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.jake.landtrade.config.OpenApiProps;
-import com.jake.landtrade.dto.ApiResponseTradeItem;
+import com.jake.landtrade.config.OpenApiPropsApt;
+import com.jake.landtrade.dto.ApiResponse;
 import com.jake.landtrade.dto.Body;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,13 +27,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@Component
-public class OpenApiClient {
+@RequiredArgsConstructor
+public abstract class OpenApiClient<P extends OpenApiProps> {
     protected final WebClient webClient;
-    protected final OpenApiProps props;
+    protected final P props;
     protected final XmlMapper xmlMapper = new XmlMapper();
 
-    public OpenApiClient(OpenApiProps props){
+    public OpenApiClient(P props){
         this.props = props;
 
         HttpClient httpClient = HttpClient.create()
@@ -49,27 +51,6 @@ public class OpenApiClient {
                 .build();
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // method : ensureSuccess
-    // description : API 호출에 대한 응답에 문제가 없는지 확인하고, 문제가 없다면 repose의 body를 리턴한다.
-    // parameter : API 호출에 대한 결과가 들어있는 response 객체
-    // return type : response 객체의 body를 리턴한다.
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    protected static Body ensureSuccess(ApiResponseTradeItem response) {
-        if(response == null || response.header() == null) {
-            throw new IllegalStateException("응답 파싱 실패 : 응답 내용이 없거나 header 없음");
-        }
-
-        String resultCode = response.header().resultCode();
-        if(!"00".equals(resultCode)) {
-            throw new IllegalStateException("OpenAPI 오류: resultCode=" + resultCode + ", msg=" + response.header().resultMsg());
-        }
-        if(response.body() == null) {
-            throw new IllegalStateException("응답 파싱 실패: body 없음");
-        }
-
-        return response.body();
-    }
 
     protected static ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(req -> {

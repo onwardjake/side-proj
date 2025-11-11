@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jake.landtrade.lawd.mapper.LawdCodeMapper">
+
+    <insert id="upsertAll">
+        INSERT INTO lawd_code (
+        code10, name, sido_cd, sgg_cd3, emd_cd3, li_cd2,
+        upper_code, resident_code, cadastral_code,
+        addr_name, level_order, create_date, abolish_date, abolish_flag, remark
+        ) VALUES
+        <foreach collection="list" item="c" separator=",">
+            (
+            #{c.code10}, #{c.name}, #{c.sidoCd}, #{c.sggCd3}, #{c.emdCd3}, #{c.liCd2},
+            #{c.upperCode}, #{c.residentCode}, #{c.cadastralCode},
+            #{c.addrName}, #{c.levelOrder}, #{c.createDate}, #{c.abolishDate}, #{c.abolishFlag}, #{c.remark}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        name=VALUES(name),
+        sido_cd=VALUES(sido_cd),
+        sgg_cd3=VALUES(sgg_cd3),
+        emd_cd3=VALUES(emd_cd3),
+        li_cd2=VALUES(li_cd2),
+        upper_code=VALUES(upper_code),
+        resident_code=VALUES(resident_code),
+        cadastral_code=VALUES(cadastral_code),
+        addr_name=VALUES(addr_name),
+        level_order=VALUES(level_order),
+        create_date=VALUES(create_date),
+        abolish_date=VALUES(abolish_date),
+        abolish_flag=VALUES(abolish_flag),
+        remark=VALUES(remark)
+    </insert>
+
+    <select id="selectDistinctLawd5" resultType="string">
+        SELECT DISTINCT LEFT(code10, 5) AS lawd5
+        FROM lawd_code
+        WHERE (abolish_flag IS NULL OR abolish_flag NOT LIKE '%폐지%')
+        ORDER BY lawd5
+    </select>
+
+    <select id="selectByUpper" parameterType="string" resultType="com.jake.landtrade.lawd.model.LawdCode">
+        SELECT
+            code10, name, sido_cd AS sidoCd, sgg_cd3 AS sggCd3, emd_cd3 AS emdCd3, li_cd2 AS liCd2,
+            upper_code AS upperCode, resident_code AS residentCode, cadastral_code AS cadastralCode,
+            addr_name AS addrName, level_order AS levelOrder, create_date AS createDate,
+            abolish_date AS abolishDate, abolish_flag AS abolishFlag, remark
+        FROM lawd_code
+        WHERE upper_code = #{upperCode}
+        ORDER BY level_order, name
+    </select>
+
+</mapper>

@@ -1,17 +1,20 @@
 package com.jake.landtrade.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+public interface OpenApiProps {
+    String baseUrl();
 
-@ConfigurationProperties(prefix = "com.jake.landtrade.config")
-public record OpenApiProps(
-        String baseUrl,
-        String servicePath,
-        String serviceKey,
-        Integer defaultPageSize,
+    String servicePath();
 
-        // 타임아웃/재시도
-        Integer connectTimeoutMills,        // ex. 3000
-        Integer responseTimeoutMills,       // ex. 5000
-        Integer retryMaxAttemps,            // ex. 3
-        Long retryBackoffMills              // ex. 500
-) {}
+    String serviceKey();
+
+    Integer defaultPageSize();
+
+    // 타임아웃/재시도
+    Integer connectTimeoutMills();        // ex. 3000
+
+    Integer responseTimeoutMills();       // ex. 5000
+
+    Integer retryMaxAttemps();            // ex. 3
+
+    Long retryBackoffMills();              // ex. 500}
+}
